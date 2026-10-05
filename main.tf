@@ -72,11 +72,11 @@ resource "aws_security_group" "web" {
   }
 
   ingress {
-  description = "Flask application"
-  from_port   = 5000
-  to_port     = 5000
-  protocol    = "tcp"
-  cidr_blocks = ["0.0.0.0/0"]
+    description = "Flask application"
+    from_port   = 5000
+    to_port     = 5000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
@@ -104,17 +104,55 @@ resource "aws_instance" "web" {
   instance_type = "t3.micro"
 
   subnet_id                   = aws_subnet.public.id
-  vpc_security_group_ids     = [aws_security_group.web.id]
+  vpc_security_group_ids      = [aws_security_group.web.id]
   associate_public_ip_address = true
 
   user_data = <<-EOF
     #!/bin/bash
-    dnf update -y
-    dnf install -y httpd python3
-    systemctl enable httpd
-    systemctl start httpd
 
-    echo "<h1>Expense Tracker Server is Working!</h1>" > /var/www/html/index.html
+    # Update the server
+    dnf update -y
+
+    # Install Python and tools needed for the application
+    dnf install -y python3 python3-pip
+
+    # Create a folder for the Expense Tracker
+    mkdir -p /home/ec2-user/expense-tracker
+
+    # Copy the app.py from the Terraform project to the EC2
+    cat > /home/ec2-user/expense-tracker/app.py <<'PYAPP'
+${file("${path.module}/app.py")}
+PYAPP
+
+    # Give the application folder to ec2-user
+    chown -R ec2-user:ec2-user /home/ec2-user/expense-tracker
+
+    # Create a Python virtual environment
+    python3 -m venv /home/ec2-user/expense-tracker/venv
+
+    # Install Flask
+    /home/ec2-user/expense-tracker/venv/bin/pip install flask
+
+    # Create a systemd service for the Expense Tracker
+    cat > /etc/systemd/system/expense-tracker.service <<'SERVICE'
+[Unit]
+Description=Expense Tracker Flask Application
+After=network.target
+
+[Service]
+User=ec2-user
+WorkingDirectory=/home/ec2-user/expense-tracker
+ExecStart=/home/ec2-user/expense-tracker/venv/bin/python /home/ec2-user/expense-tracker/app.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+SERVICE
+
+    # Start the Expense Tracker
+    systemctl daemon-reload
+    systemctl enable expense-tracker
+    systemctl start expense-tracker
   EOF
 
   lifecycle {
