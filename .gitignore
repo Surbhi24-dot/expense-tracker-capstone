@@ -1,3 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# SQLite database
+expenses.db
+
+# Terraform
 .terraform/
 *.tfstate
 *.tfstate.*
