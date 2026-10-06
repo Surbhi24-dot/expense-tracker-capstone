@@ -113,16 +113,13 @@ resource "aws_instance" "web" {
     # Update the server
     dnf update -y
 
-    # Install Python
-    dnf install -y python3
-
-    # Install pip for Python
-    python3 -m ensurepip --upgrade
+    # Install Python and pip
+    dnf install -y python3 python3-pip
 
     # Create a folder for the Expense Tracker
     mkdir -p /home/ec2-user/expense-tracker
 
-    # Copy the app.py from the Terraform project to the EC2
+    # Copy the application from the Terraform project to EC2
     cat > /home/ec2-user/expense-tracker/app.py <<'PYAPP'
 ${file("${path.module}/app.py")}
 PYAPP
@@ -133,14 +130,15 @@ PYAPP
     # Create a Python virtual environment
     python3 -m venv /home/ec2-user/expense-tracker/venv
 
-    # Install Flask
+    # Install Flask inside the virtual environment
     /home/ec2-user/expense-tracker/venv/bin/python -m pip install flask
 
-    # Create a systemd service for the Expense Tracker
+    # Create systemd service
     cat > /etc/systemd/system/expense-tracker.service <<'SERVICE'
 [Unit]
 Description=Expense Tracker Flask Application
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 User=ec2-user
@@ -152,7 +150,7 @@ Restart=always
 WantedBy=multi-user.target
 SERVICE
 
-    # Start the Expense Tracker
+    # Enable and start the application
     systemctl daemon-reload
     systemctl enable expense-tracker
     systemctl start expense-tracker
