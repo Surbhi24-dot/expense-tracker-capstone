@@ -113,8 +113,11 @@ resource "aws_instance" "web" {
     # Update the server
     dnf update -y
 
-    # Install Python and tools needed for the application
-    dnf install -y python3 python3-pip
+    # Install Python
+    dnf install -y python3
+
+    # Install pip for Python
+    python3 -m ensurepip --upgrade
 
     # Create a folder for the Expense Tracker
     mkdir -p /home/ec2-user/expense-tracker
@@ -131,7 +134,7 @@ PYAPP
     python3 -m venv /home/ec2-user/expense-tracker/venv
 
     # Install Flask
-    /home/ec2-user/expense-tracker/venv/bin/pip install flask
+    /home/ec2-user/expense-tracker/venv/bin/python -m pip install flask
 
     # Create a systemd service for the Expense Tracker
     cat > /etc/systemd/system/expense-tracker.service <<'SERVICE'
