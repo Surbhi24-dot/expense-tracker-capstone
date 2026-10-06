@@ -11,6 +11,23 @@ def get_db_connection():
     return connection
 
 
+def init_db():
+    connection = get_db_connection()
+
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS expenses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            description TEXT NOT NULL,
+            amount REAL NOT NULL,
+            category TEXT NOT NULL,
+            date TEXT NOT NULL
+        )
+    """)
+
+    connection.commit()
+    connection.close()
+
+
 @app.route("/", methods=["GET", "POST"])
 def home():
 
@@ -298,6 +315,6 @@ def edit_expense(expense_id):
     </html>
     """
 
-
 if __name__ == "__main__":
+    init_db()
     app.run(host="0.0.0.0", port=5000)
