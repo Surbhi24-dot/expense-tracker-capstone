@@ -109,7 +109,7 @@ resource "aws_instance" "web" {
 
 
   user_data = <<-EOF
-  #!/bin/bash
+#!/bin/bash
 
     # Update the server
     dnf update -y
