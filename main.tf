@@ -156,9 +156,12 @@ SERVICE
     systemctl start expense-tracker
   EOF
 
+  user_data_replace_on_change = true
+
   lifecycle {
     create_before_destroy = true
   }
+
 
   tags = {
     Name = "expense-tracker-web"
