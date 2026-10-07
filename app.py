@@ -36,11 +36,11 @@ def init_db():
     connection.close()
 
 
-
 @app.route("/", methods=["GET", "POST"])
 def home():
 
     connection = get_db_connection()
+    cursor = connection.cursor()
 
     if request.method == "POST":
 
@@ -49,32 +49,38 @@ def home():
         category = request.form["category"]
         expense_date = request.form["date"]
 
-        connection.execute(
+        cursor.execute(
             "INSERT INTO expenses (description, amount, category, date) VALUES (%s, %s, %s, %s)",
             (description, amount, category, expense_date)
         )
 
         connection.commit()
+        cursor.close()
         connection.close()
 
         return redirect("/")
 
-    expenses = connection.execute(
+    cursor.execute(
         "SELECT * FROM expenses ORDER BY id DESC"
-    ).fetchall()
+    )
+    expenses = cursor.fetchall()
 
-    total = connection.execute(
-        "SELECT SUM(amount) FROM expenses"
-    ).fetchone()[0]
+    cursor.execute(
+        "SELECT SUM(amount) AS total FROM expenses"
+    )
+    total = cursor.fetchone()["total"]
 
     if total is None:
         total = 0
 
-    category_totals = connection.execute(
+    cursor.execute(
         "SELECT category, SUM(amount) AS total FROM expenses GROUP BY category"
-    ).fetchall()
+    )
+    category_totals = cursor.fetchall()
 
+    cursor.close()
     connection.close()
+
 
     html = f"""
     <html>
