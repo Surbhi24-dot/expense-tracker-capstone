@@ -183,40 +183,54 @@ Prevents files such as Terraform state files, the SQLite database, and Python ca
 
 ## Current Level
 
-This is the initial Level 1 version of the project.
+The project has now reached Level 2.
 
-The focus is on understanding:
+The application runs on Amazon EC2 and uses Amazon RDS MySQL as the database.
+
+The current architecture is:
+
+Internet
+↓
+Public Subnet
+↓
+EC2
+↓
+Private Subnets
+↓
+RDS MySQL
+
+The focus of Level 2 is on understanding:
 
 * Terraform
 * AWS VPC
-* Subnets
+* Public and private subnets
+* Internet Gateway
+* Route Tables
 * Security Groups
 * EC2
+* Amazon RDS MySQL
+* Database connectivity
 * Infrastructure as Code
 * GitHub
 * Terraform Cloud
 * Automated application setup
 
+The Terraform infrastructure is stored in GitHub and connected to Terraform Cloud. Changes pushed to the main branch automatically trigger a Terraform plan.
+
 ## Future Improvements
 
 The project can be extended as I learn more AWS services.
 
-Possible future improvements include:
-
-### Level 2
-
-* Amazon RDS instead of SQLite
-* Private subnet for the database
-* Separate public and private networking
-* Improved security rules
-
 ### Level 3
+
+Possible future improvements include:
 
 * Application Load Balancer
 * Auto Scaling Group
 * Multiple EC2 instances
-* RDS database
-* More highly available architecture
+* RDS MySQL database
+* Improved high availability
+* More scalable architecture
 
 ## Learning Goals
 
@@ -228,7 +242,11 @@ This project is designed to demonstrate practical knowledge of:
 * GitHub version control
 * Terraform Cloud
 * EC2 deployment
+* Amazon RDS
 * Basic cloud networking
+* Public and private subnets
+* Security Groups
+* Database connectivity
 * Application deployment
 * AWS architecture
 
