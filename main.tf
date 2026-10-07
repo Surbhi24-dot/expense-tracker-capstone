@@ -231,6 +231,12 @@ Wants=network-online.target
 [Service]
 User=ec2-user
 WorkingDirectory=/home/ec2-user/expense-tracker
+
+Environment="DB_HOST=${aws_db_instance.expense_tracker.address}"
+Environment="DB_USER=expense_user"
+Environment="DB_PASSWORD=${var.db_password}"
+Environment="DB_NAME=expense_tracker"
+
 ExecStart=/home/ec2-user/expense-tracker/venv/bin/python /home/ec2-user/expense-tracker/app.py
 Restart=always
 

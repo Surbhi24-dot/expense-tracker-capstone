@@ -1,4 +1,5 @@
 from flask import Flask, request, redirect
+import os
 import pymysql
 from datetime import date
 
@@ -7,10 +8,10 @@ app = Flask(__name__)
 
 def get_db_connection():
     connection = pymysql.connect(
-        host="RDS_ENDPOINT",
-        user="expense_user",
-        password="YOUR_PASSWORD",
-        database="expense_tracker",
+        host=os.environ["DB_HOST"],
+        user=os.environ["DB_USER"],
+        password=os.environ["DB_PASSWORD"],
+        database=os.environ["DB_NAME"],
         cursorclass=pymysql.cursors.DictCursor
     )
     return connection
