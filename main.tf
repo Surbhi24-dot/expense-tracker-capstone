@@ -32,6 +32,26 @@ resource "aws_subnet" "public" {
   }
 }
 
+resource "aws_subnet" "private" {
+  vpc_id            = aws_vpc.expense_tracker.id
+  cidr_block        = "10.20.2.0/24"
+  availability_zone = "us-east-1a"
+
+  tags = {
+    Name = "expense-tracker-private-subnet"
+  }
+}
+
+resource "aws_subnet" "private_2" {
+  vpc_id            = aws_vpc.expense_tracker.id
+  cidr_block        = "10.20.3.0/24"
+  availability_zone = "us-east-1b"
+
+  tags = {
+    Name = "expense-tracker-private-subnet-2"
+  }
+}
+
 resource "aws_internet_gateway" "expense_tracker" {
   vpc_id = aws_vpc.expense_tracker.id
 
@@ -99,6 +119,73 @@ resource "aws_security_group" "web" {
   }
 }
 
+resource "aws_security_group" "database" {
+  name        = "expense-tracker-database-sg"
+  description = "Security group for Expense Tracker RDS"
+  vpc_id      = aws_vpc.expense_tracker.id
+
+  ingress {
+    description     = "MySQL from Expense Tracker EC2"
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = [aws_security_group.web.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "expense-tracker-database-sg"
+  }
+}
+
+resource "aws_db_subnet_group" "expense_tracker" {
+  name = "expense-tracker-db-subnet-group"
+
+  subnet_ids = [
+    aws_subnet.private.id,
+    aws_subnet.private_2.id
+  ]
+
+  tags = {
+    Name = "expense-tracker-db-subnet-group"
+  }
+}
+
+resource "aws_db_instance" "expense_tracker" {
+  identifier = "expense-tracker-db"
+
+  engine         = "mysql"
+  engine_version = "8.0"
+
+  instance_class        = "db.t3.micro"
+  allocated_storage     = 20
+  max_allocated_storage = 20
+  storage_type          = "gp3"
+
+  db_name  = "expense_tracker"
+  username = "expense_user"
+  password = var.db_password
+
+  db_subnet_group_name   = aws_db_subnet_group.expense_tracker.name
+  vpc_security_group_ids = [aws_security_group.database.id]
+
+  publicly_accessible = false
+  skip_final_snapshot = true
+  deletion_protection = false
+
+  backup_retention_period = 0
+
+  tags = {
+    Name = "expense-tracker-rds"
+  }
+}
+
 resource "aws_instance" "web" {
   ami           = "ami-0d27e0fb3bac4d724"
   instance_type = "t3.micro"
@@ -131,8 +218,8 @@ PYAPP
     # Create a Python virtual environment
     python3 -m venv /home/ec2-user/expense-tracker/venv
 
-    # Install Flask inside the virtual environment
-    /home/ec2-user/expense-tracker/venv/bin/python -m pip install flask
+    # Install Flask and PyMySQL inside the virtual environment
+    /home/ec2-user/expense-tracker/venv/bin/python -m pip install flask pymysql
 
     # Create systemd service
     cat > /etc/systemd/system/expense-tracker.service <<'SERVICE'

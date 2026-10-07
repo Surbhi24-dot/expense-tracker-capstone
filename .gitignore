@@ -11,3 +11,6 @@ expenses.db
 .terraform/
 *.tfstate
 *.tfstate.*
+
+# Local backup
+app_sqlite_backup.py

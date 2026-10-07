@@ -1,13 +1,18 @@
 from flask import Flask, request, redirect
-import sqlite3
+import pymysql
 from datetime import date
 
 app = Flask(__name__)
 
 
 def get_db_connection():
-    connection = sqlite3.connect("expenses.db")
-    connection.row_factory = sqlite3.Row
+    connection = pymysql.connect(
+        host="RDS_ENDPOINT",
+        user="expense_user",
+        password="YOUR_PASSWORD",
+        database="expense_tracker",
+        cursorclass=pymysql.cursors.DictCursor
+    )
     return connection
 
 
@@ -16,7 +21,7 @@ def init_db():
 
     connection.execute("""
         CREATE TABLE IF NOT EXISTS expenses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INT AUTO_INCREMENT PRIMARY KEY,
             description TEXT NOT NULL,
             amount REAL NOT NULL,
             category TEXT NOT NULL,
@@ -41,7 +46,7 @@ def home():
         expense_date = request.form["date"]
 
         connection.execute(
-            "INSERT INTO expenses (description, amount, category, date) VALUES (?, ?, ?, ?)",
+            "INSERT INTO expenses (description, amount, category, date) VALUES (%s, %s, %s, %s)",
             (description, amount, category, expense_date)
         )
 
@@ -182,7 +187,7 @@ def delete_expense(expense_id):
     connection = get_db_connection()
 
     connection.execute(
-        "DELETE FROM expenses WHERE id = ?",
+       "DELETE FROM expenses WHERE id = %s",
         (expense_id,)
     )
 
@@ -211,7 +216,7 @@ def edit_expense(expense_id):
                 amount = ?,
                 category = ?,
                 date = ?
-            WHERE id = ?
+            WHERE id = %s
             """,
             (
                 description,
@@ -228,7 +233,7 @@ def edit_expense(expense_id):
         return redirect("/")
 
     expense = connection.execute(
-        "SELECT * FROM expenses WHERE id = ?",
+        "SELECT * FROM expenses WHERE id = %s",
         (expense_id,)
     ).fetchone()
 
