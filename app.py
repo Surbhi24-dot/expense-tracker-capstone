@@ -19,8 +19,9 @@ def get_db_connection():
 
 def init_db():
     connection = get_db_connection()
+    cursor = connection.cursor()
 
-    connection.execute("""
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS expenses (
             id INT AUTO_INCREMENT PRIMARY KEY,
             description TEXT NOT NULL,
@@ -31,7 +32,9 @@ def init_db():
     """)
 
     connection.commit()
+    cursor.close()
     connection.close()
+
 
 
 @app.route("/", methods=["GET", "POST"])
