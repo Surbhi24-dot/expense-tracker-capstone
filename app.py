@@ -195,22 +195,25 @@ def home():
 def delete_expense(expense_id):
 
     connection = get_db_connection()
+    cursor = connection.cursor()
 
-    connection.execute(
-       "DELETE FROM expenses WHERE id = %s",
+    cursor.execute(
+        "DELETE FROM expenses WHERE id = %s",
         (expense_id,)
     )
 
     connection.commit()
+
+    cursor.close()
     connection.close()
 
     return redirect("/")
-
 
 @app.route("/edit/<int:expense_id>", methods=["GET", "POST"])
 def edit_expense(expense_id):
 
     connection = get_db_connection()
+    cursor = connection.cursor()
 
     if request.method == "POST":
 
@@ -219,13 +222,13 @@ def edit_expense(expense_id):
         category = request.form["category"]
         expense_date = request.form["date"]
 
-        connection.execute(
+        cursor.execute(
             """
             UPDATE expenses
-            SET description = ?,
-                amount = ?,
-                category = ?,
-                date = ?
+            SET description = %s,
+                amount = %s,
+                category = %s,
+                date = %s
             WHERE id = %s
             """,
             (
@@ -238,15 +241,20 @@ def edit_expense(expense_id):
         )
 
         connection.commit()
+
+        cursor.close()
         connection.close()
 
         return redirect("/")
 
-    expense = connection.execute(
+    cursor.execute(
         "SELECT * FROM expenses WHERE id = %s",
         (expense_id,)
-    ).fetchone()
+    )
 
+    expense = cursor.fetchone()
+
+    cursor.close()
     connection.close()
 
     if expense is None:
