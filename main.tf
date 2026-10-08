@@ -161,7 +161,7 @@ resource "aws_db_instance" "expense_tracker" {
   identifier = "expense-tracker-db"
 
   engine         = "mysql"
-  engine_version = "8.0"
+  engine_version = "8.0.46"
 
   instance_class        = "db.t3.micro"
   allocated_storage     = 20
@@ -251,8 +251,12 @@ SERVICE
   user_data_replace_on_change = true
 
   lifecycle {
-    create_before_destroy = true
-  }
+  create_before_destroy = true
+
+  ignore_changes = [
+    user_data
+  ]
+}
 
 
   tags = {
