@@ -207,10 +207,8 @@ resource "aws_instance" "web" {
     # Create a folder for the Expense Tracker
     mkdir -p /home/ec2-user/expense-tracker
 
-    # Copy the application from the Terraform project to EC2
-    cat > /home/ec2-user/expense-tracker/app.py <<'PYAPP'
-${file("${path.module}/app.py")}
-PYAPP
+    # Download the application from GitHub
+    curl -fL -o /home/ec2-user/expense-tracker/app.py https://raw.githubusercontent.com/Surbhi24-dot/expense-tracker-capstone/main/app.py
 
     # Give the application folder to ec2-user
     chown -R ec2-user:ec2-user /home/ec2-user/expense-tracker
