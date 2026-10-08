@@ -81,110 +81,445 @@ def home():
     cursor.close()
     connection.close()
 
-
     html = f"""
     <html>
+
     <head>
         <title>Expense Tracker</title>
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <style>
+
+            * {{
+                box-sizing: border-box;
+            }}
+
+            body {{
+                margin: 0;
+                font-family: Arial, sans-serif;
+                background: #f4f6fb;
+                color: #1f2937;
+            }}
+
+            .header {{
+                background: linear-gradient(135deg, #4f46e5, #7c3aed);
+                color: white;
+                padding: 35px 20px;
+                text-align: center;
+            }}
+
+            .header h1 {{
+                margin: 0;
+                font-size: 34px;
+            }}
+
+            .header p {{
+                margin: 8px 0 0;
+                opacity: 0.9;
+            }}
+
+            .container {{
+                max-width: 1100px;
+                margin: 30px auto;
+                padding: 0 20px;
+            }}
+
+            .total-card {{
+                background: white;
+                border-radius: 16px;
+                padding: 25px;
+                margin-bottom: 25px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+                border-left: 6px solid #6366f1;
+            }}
+
+            .total-card h2 {{
+                margin: 0;
+                color: #6b7280;
+                font-size: 16px;
+            }}
+
+            .total-amount {{
+                margin-top: 8px;
+                font-size: 34px;
+                font-weight: bold;
+                color: #4f46e5;
+            }}
+
+            .card {{
+                background: white;
+                border-radius: 16px;
+                padding: 25px;
+                margin-bottom: 25px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            }}
+
+            .card h2 {{
+                margin-top: 0;
+                color: #111827;
+            }}
+
+            .form-grid {{
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 18px;
+            }}
+
+            .form-group {{
+                display: flex;
+                flex-direction: column;
+            }}
+
+            .form-group label {{
+                margin-bottom: 7px;
+                font-weight: bold;
+                color: #374151;
+            }}
+
+            input,
+            select {{
+                padding: 12px;
+                border: 1px solid #d1d5db;
+                border-radius: 8px;
+                font-size: 15px;
+                background: white;
+            }}
+
+            input:focus,
+            select:focus {{
+                outline: none;
+                border-color: #6366f1;
+                box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+            }}
+
+            .add-button {{
+                margin-top: 20px;
+                padding: 13px 24px;
+                border: none;
+                border-radius: 9px;
+                background: #4f46e5;
+                color: white;
+                font-size: 15px;
+                font-weight: bold;
+                cursor: pointer;
+            }}
+
+            .add-button:hover {{
+                background: #4338ca;
+            }}
+
+            .category-grid {{
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 12px;
+            }}
+
+            .category-card {{
+                background: #f8f7ff;
+                border: 1px solid #e5e7eb;
+                border-radius: 12px;
+                padding: 16px;
+                text-align: center;
+            }}
+
+            .category-name {{
+                font-size: 14px;
+                color: #6b7280;
+                margin-bottom: 8px;
+            }}
+
+            .category-amount {{
+                font-size: 20px;
+                font-weight: bold;
+                color: #4f46e5;
+            }}
+
+            .expense-table-wrapper {{
+                overflow-x: auto;
+            }}
+
+            table {{
+                width: 100%;
+                border-collapse: collapse;
+                min-width: 650px;
+            }}
+
+            th {{
+                background: #f3f4f6;
+                color: #4b5563;
+                text-align: left;
+                padding: 14px;
+                font-size: 14px;
+            }}
+
+            td {{
+                padding: 14px;
+                border-bottom: 1px solid #e5e7eb;
+            }}
+
+            tr:hover {{
+                background: #fafafa;
+            }}
+
+            .category-badge {{
+                display: inline-block;
+                padding: 5px 10px;
+                border-radius: 20px;
+                background: #ede9fe;
+                color: #6d28d9;
+                font-size: 13px;
+                font-weight: bold;
+            }}
+
+            .action-button {{
+                padding: 7px 12px;
+                border-radius: 7px;
+                border: none;
+                cursor: pointer;
+                font-size: 13px;
+                font-weight: bold;
+            }}
+
+            .edit-button {{
+                background: #e0e7ff;
+                color: #3730a3;
+            }}
+
+            .delete-button {{
+                background: #fee2e2;
+                color: #b91c1c;
+            }}
+
+            .empty-message {{
+                text-align: center;
+                color: #6b7280;
+                padding: 25px;
+            }}
+
+            @media (max-width: 700px) {{
+
+                .form-grid {{
+                    grid-template-columns: 1fr;
+                }}
+
+                .category-grid {{
+                    grid-template-columns: repeat(2, 1fr);
+                }}
+
+                .header h1 {{
+                    font-size: 28px;
+                }}
+
+            }}
+
+        </style>
+
     </head>
 
     <body>
 
-        <h1>Expense Tracker</h1>
+        <div class="header">
+            <h1>💰 Expense Tracker</h1>
+            <p>Manage your personal expenses in one place</p>
+        </div>
 
-        <h2>Total Expenses: €{total:.2f}</h2>
+        <div class="container">
 
-        <h2>Add Expense</h2>
+            <div class="total-card">
+                <h2>Total Expenses</h2>
+                <div class="total-amount">€{total:.2f}</div>
+            </div>
 
-        <form method="POST">
+            <div class="card">
 
-            <label>Description:</label>
-            <input type="text" name="description" required>
+                <h2>➕ Add New Expense</h2>
 
-            <br><br>
+                <form method="POST">
 
-            <label>Amount (€):</label>
-            <input type="number" name="amount" step="0.01" required>
+                    <div class="form-grid">
 
-            <br><br>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input
+                                type="text"
+                                name="description"
+                                placeholder="e.g. Grocery shopping"
+                                required>
+                        </div>
 
-            <label>Category:</label>
+                        <div class="form-group">
+                            <label>Amount (€)</label>
+                            <input
+                                type="number"
+                                name="amount"
+                                step="0.01"
+                                placeholder="0.00"
+                                required>
+                        </div>
 
-            <select name="category">
-                <option value="Food">Food</option>
-                <option value="Transport">Transport</option>
-                <option value="Shopping">Shopping</option>
-                <option value="Bills">Bills</option>
-                <option value="Other">Other</option>
-            </select>
+                        <div class="form-group">
+                            <label>Category</label>
 
-            <br><br>
+                            <select name="category">
+                                <option value="Food">Food</option>
+                                <option value="Transport">Transport</option>
+                                <option value="Shopping">Shopping</option>
+                                <option value="Bills">Bills</option>
+                                <option value="Other">Other</option>
+                            </select>
 
-            <label>Date:</label>
-            <input type="date" name="date" value="{date.today()}" required>
+                        </div>
 
-            <br><br>
+                        <div class="form-group">
+                            <label>Date</label>
 
-            <button type="submit">Add Expense</button>
+                            <input
+                                type="date"
+                                name="date"
+                                value="{date.today()}"
+                                required>
 
-        </form>
+                        </div>
 
-        <h2>Category Summary</h2>
+                    </div>
 
-        <ul>
+                    <button class="add-button" type="submit">
+                        Add Expense
+                    </button>
+
+                </form>
+
+            </div>
+
+            <div class="card">
+
+                <h2>📊 Category Summary</h2>
+
+                <div class="category-grid">
     """
 
     for row in category_totals:
 
         html += f"""
-        <li>
-            {row["category"]}: €{row["total"]:.2f}
-        </li>
+                    <div class="category-card">
+
+                        <div class="category-name">
+                            {row["category"]}
+                        </div>
+
+                        <div class="category-amount">
+                            €{row["total"]:.2f}
+                        </div>
+
+                    </div>
         """
 
     html += """
-        </ul>
+                </div>
 
-        <h2>All Expenses</h2>
+            </div>
 
-        <ul>
+            <div class="card">
+
+                <h2>📋 All Expenses</h2>
+
+                <div class="expense-table-wrapper">
+
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Amount</th>
+                                <th>Category</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
     """
+
+    if not expenses:
+
+        html += """
+                            <tr>
+                                <td colspan="5" class="empty-message">
+                                    No expenses yet. Add your first expense above.
+                                </td>
+                            </tr>
+        """
 
     for expense in expenses:
 
         expense_date = expense["date"] if expense["date"] else "No date"
 
         html += f"""
-        <li>
+                            <tr>
 
-            {expense["description"]}
-            - €{expense["amount"]:.2f}
-            - {expense["category"]}
-            - {expense_date}
+                                <td>
+                                    {expense["description"]}
+                                </td>
 
-            <form method="GET"
-                  action="/edit/{expense["id"]}"
-                  style="display:inline;">
+                                <td>
+                                    €{expense["amount"]:.2f}
+                                </td>
 
-                <button type="submit">Edit</button>
+                                <td>
+                                    <span class="category-badge">
+                                        {expense["category"]}
+                                    </span>
+                                </td>
 
-            </form>
+                                <td>
+                                    {expense_date}
+                                </td>
 
-            <form method="POST"
-                  action="/delete/{expense["id"]}"
-                  style="display:inline;">
+                                <td>
 
-                <button type="submit">Delete</button>
+                                    <form method="GET"
+                                          action="/edit/{expense["id"]}"
+                                          style="display:inline;">
 
-            </form>
+                                        <button
+                                            type="submit"
+                                            class="action-button edit-button">
+                                            Edit
+                                        </button>
 
-        </li>
+                                    </form>
+
+                                    <form method="POST"
+                                          action="/delete/{expense["id"]}"
+                                          style="display:inline;">
+
+                                        <button
+                                            type="submit"
+                                            class="action-button delete-button">
+                                            Delete
+                                        </button>
+
+                                    </form>
+
+                                </td>
+
+                            </tr>
         """
 
     html += """
-        </ul>
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
 
     </body>
+
     </html>
     """
 

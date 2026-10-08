@@ -14,3 +14,4 @@ expenses.db
 
 # Local backup
 app_sqlite_backup.py
+app_before_design.py
