@@ -3,17 +3,22 @@ output "vpc_id" {
   value       = aws_vpc.expense_tracker.id
 }
 
-output "subnet_id" {
-  description = "ID of the public subnet"
-  value       = aws_subnet.public.id
+output "alb_dns_name" {
+  description = "DNS name of the Application Load Balancer"
+  value       = aws_lb.expense_tracker.dns_name
 }
 
-output "instance_id" {
-  description = "ID of the Expense Tracker EC2 instance"
-  value       = aws_instance.web.id
+output "expense_tracker_url" {
+  description = "URL to access the Expense Tracker application"
+  value       = "http://${aws_lb.expense_tracker.dns_name}"
 }
 
-output "public_ip" {
-  description = "Public IP address of the Expense Tracker server"
-  value       = aws_instance.web.public_ip
+output "autoscaling_group_name" {
+  description = "Name of the Expense Tracker Auto Scaling Group"
+  value       = aws_autoscaling_group.expense_tracker.name
+}
+
+output "rds_endpoint" {
+  description = "Endpoint of the Expense Tracker database"
+  value       = aws_db_instance.expense_tracker.address
 }

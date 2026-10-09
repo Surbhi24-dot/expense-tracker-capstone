@@ -32,6 +32,17 @@ resource "aws_subnet" "public" {
   }
 }
 
+resource "aws_subnet" "public_2" {
+  vpc_id                  = aws_vpc.expense_tracker.id
+  cidr_block              = "10.20.4.0/24"
+  availability_zone       = "us-east-1b"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "expense-tracker-public-subnet-2"
+  }
+}
+
 resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.expense_tracker.id
   cidr_block        = "10.20.2.0/24"
@@ -78,31 +89,45 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
+resource "aws_route_table_association" "public_2" {
+  subnet_id      = aws_subnet.public_2.id
+  route_table_id = aws_route_table.public.id
+}
+
 resource "aws_security_group" "web" {
   name        = "expense-tracker-web-sg"
   description = "Security group for Expense Tracker web server"
   vpc_id      = aws_vpc.expense_tracker.id
 
   ingress {
-    description = "HTTP"
+    description     = "Flask traffic from the ALB only"
+    from_port       = 5000
+    to_port         = 5000
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "expense-tracker-web-sg"
+  }
+}
+
+resource "aws_security_group" "alb" {
+  name        = "expense-tracker-alb-sg"
+  description = "Allow HTTP traffic to the Application Load Balancer"
+  vpc_id      = aws_vpc.expense_tracker.id
+
+  ingress {
+    description = "HTTP from the internet"
     from_port   = 80
     to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    description = "Flask application"
-    from_port   = 5000
-    to_port     = 5000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    description = "SSH"
-    from_port   = 22
-    to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -115,7 +140,7 @@ resource "aws_security_group" "web" {
   }
 
   tags = {
-    Name = "expense-tracker-web-sg"
+    Name = "expense-tracker-alb-sg"
   }
 }
 
@@ -186,41 +211,87 @@ resource "aws_db_instance" "expense_tracker" {
   }
 }
 
-resource "aws_instance" "web" {
-  ami           = "ami-0d27e0fb3bac4d724"
+# Application Load Balancer
+resource "aws_lb" "expense_tracker" {
+  name               = "expense-tracker-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb.id]
+
+  subnets = [
+    aws_subnet.public.id,
+    aws_subnet.public_2.id
+  ]
+
+  tags = {
+    Name = "expense-tracker-alb"
+  }
+}
+
+# Target group for the Flask application
+resource "aws_lb_target_group" "expense_tracker" {
+  name     = "expense-tracker-tg"
+  port     = 5000
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.expense_tracker.id
+
+  health_check {
+    enabled             = true
+    path                = "/"
+    protocol            = "HTTP"
+    matcher             = "200-399"
+    interval            = 30
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+  }
+
+  tags = {
+    Name = "expense-tracker-target-group"
+  }
+}
+
+# HTTP listener for the load balancer
+resource "aws_lb_listener" "expense_tracker" {
+  load_balancer_arn = aws_lb.expense_tracker.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.expense_tracker.arn
+  }
+}
+
+# Launch Template for Expense Tracker EC2 instances
+resource "aws_launch_template" "expense_tracker" {
+  name_prefix   = "expense-tracker-"
+  image_id      = "ami-0d27e0fb3bac4d724"
   instance_type = "t3.micro"
 
-  subnet_id                   = aws_subnet.public.id
-  vpc_security_group_ids      = [aws_security_group.web.id]
-  associate_public_ip_address = true
+  network_interfaces {
+    associate_public_ip_address = true
+    security_groups             = [aws_security_group.web.id]
+  }
 
-
-  user_data = <<-EOF
+  user_data = base64encode(<<-EOF
 #!/bin/bash
+set -e
 
-    # Update the server
-    dnf update -y
+dnf update -y
+dnf install -y python3 python3-pip
 
-    # Install Python and pip
-    dnf install -y python3 python3-pip
+mkdir -p /home/ec2-user/expense-tracker
 
-    # Create a folder for the Expense Tracker
-    mkdir -p /home/ec2-user/expense-tracker
+curl -fL -o /home/ec2-user/expense-tracker/app.py \
+  https://raw.githubusercontent.com/Surbhi24-dot/expense-tracker-capstone/main/app.py
 
-    # Download the application from GitHub
-    curl -fL -o /home/ec2-user/expense-tracker/app.py https://raw.githubusercontent.com/Surbhi24-dot/expense-tracker-capstone/main/app.py
+chown -R ec2-user:ec2-user /home/ec2-user/expense-tracker
 
-    # Give the application folder to ec2-user
-    chown -R ec2-user:ec2-user /home/ec2-user/expense-tracker
+python3 -m venv /home/ec2-user/expense-tracker/venv
 
-    # Create a Python virtual environment
-    python3 -m venv /home/ec2-user/expense-tracker/venv
+/home/ec2-user/expense-tracker/venv/bin/python -m pip install flask pymysql
 
-    # Install Flask and PyMySQL inside the virtual environment
-    /home/ec2-user/expense-tracker/venv/bin/python -m pip install flask pymysql
-
-    # Create systemd service
-    cat > /etc/systemd/system/expense-tracker.service <<'SERVICE'
+cat > /etc/systemd/system/expense-tracker.service <<'SERVICE'
 [Unit]
 Description=Expense Tracker Flask Application
 After=network-online.target
@@ -229,12 +300,10 @@ Wants=network-online.target
 [Service]
 User=ec2-user
 WorkingDirectory=/home/ec2-user/expense-tracker
-
 Environment="DB_HOST=${aws_db_instance.expense_tracker.address}"
 Environment="DB_USER=expense_user"
 Environment="DB_PASSWORD=${var.db_password}"
 Environment="DB_NAME=expense_tracker"
-
 ExecStart=/home/ec2-user/expense-tracker/venv/bin/python /home/ec2-user/expense-tracker/app.py
 Restart=always
 
@@ -242,24 +311,47 @@ Restart=always
 WantedBy=multi-user.target
 SERVICE
 
-    # Enable and start the application
-    systemctl daemon-reload
-    systemctl enable expense-tracker
-    systemctl start expense-tracker
-  EOF
+systemctl daemon-reload
+systemctl enable expense-tracker
+systemctl start expense-tracker
+EOF
+  )
 
-  user_data_replace_on_change = true
+  tag_specifications {
+    resource_type = "instance"
 
-  lifecycle {
-  create_before_destroy = true
-
-  ignore_changes = [
-    user_data
-  ]
+    tags = {
+      Name = "expense-tracker-asg-instance"
+    }
+  }
 }
 
+# Auto Scaling Group for Expense Tracker
+resource "aws_autoscaling_group" "expense_tracker" {
+  name             = "expense-tracker-asg"
+  min_size         = 2
+  max_size         = 2
+  desired_capacity = 2
+  vpc_zone_identifier = [
+    aws_subnet.public.id,
+    aws_subnet.public_2.id
+  ]
 
-  tags = {
-    Name = "expense-tracker-web"
+  target_group_arns = [
+    aws_lb_target_group.expense_tracker.arn
+  ]
+
+  health_check_type         = "ELB"
+  health_check_grace_period = 300
+
+  launch_template {
+    id      = aws_launch_template.expense_tracker.id
+    version = "$Latest"
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "expense-tracker-asg-instance"
+    propagate_at_launch = true
   }
 }
