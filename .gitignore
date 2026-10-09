@@ -15,3 +15,8 @@ expenses.db
 # Local backup
 app_sqlite_backup.py
 app_before_design.py
+
+# Terraform variable files containing secrets
+*.tfvars
+*.tfvars.json
+!example.tfvars
