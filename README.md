@@ -1,257 +1,216 @@
-# AWS Expense Tracker
+Personal Expense Tracker on AWS
 
-A simple personal expense tracker application deployed on AWS using Terraform.
+A cloud-based Personal Expense Tracker built as an AWS capstone project.
+The application is written in Python with Flask and uses Amazon RDS for
+persistent MySQL storage. The AWS infrastructure was defined with
+Terraform and deployed through HCP Terraform, connected to this GitHub
+repository.
 
-The project is built as part of my AWS and Terraform learning journey. The goal is to start with a small working application and gradually improve the infrastructure as I learn more AWS services.
+Current status: The capstone infrastructure was successfully
+deployed and tested, then destroyed to avoid ongoing AWS charges. The
+repository contains the project code and infrastructure configuration;
+the live AWS URL is not expected to work while the infrastructure is
+destroyed.
 
-## Project Overview
+Project goals
 
-The Expense Tracker allows users to:
+Build a simple web application to manage personal expenses.
 
-* Add an expense
-* View expenses
-* Edit expenses
-* Delete expenses
-* See the total expenses
-* Organize expenses by category
-* Store the expense date
+Practise Infrastructure as Code (IaC) with Terraform.
 
-The application is built with Python and Flask. The current version uses SQLite for data storage.
+Deploy an application behind an Application Load Balancer.
 
-## Architecture
+Run multiple EC2 instances using an Auto Scaling Group.
 
-```text
-GitHub
-   |
-   | Push to main
-   v
-Terraform Cloud
-   |
-   | Terraform plan and apply
-   v
-AWS
-   |
-   +----------------------+
-   |                      |
-   v                      v
-  VPC                Security Group
-   |
-   v
-Public Subnet
-   |
-   v
-EC2 Instance
-   |
-   +-- Python
-   +-- Flask
-   +-- SQLite
-   |
-   v
-Expense Tracker
-```
+Store application data in Amazon RDS for MySQL.
 
-## AWS Resources
+Connect GitHub to HCP Terraform so code changes can trigger
+Terraform runs.
 
-The current version creates the following AWS resources using Terraform:
+Features
 
-* VPC
-* Public Subnet
-* Internet connectivity
-* Security Group
-* EC2 Instance
+Add an expense.
 
-The EC2 instance runs the Flask Expense Tracker application.
+View expense entries.
 
-## Terraform
+Edit an existing expense.
 
-Terraform is used to create and manage the AWS infrastructure as code.
+Delete an expense.
 
-The main Terraform configuration contains:
+Categorise expenses (for example, Food, Shopping, Bills, Transport,
+and Other).
 
-* AWS provider
-* VPC
-* Public subnet
-* Security group
-* EC2 instance
-* Terraform outputs
+Record expense details and dates.
 
-Terraform state is managed by Terraform Cloud.
+View the total of recorded expenses.
 
-## Automated Deployment
+Architecture
 
-The project uses GitHub and Terraform Cloud.
+                         Users / Browser
+                                |
+                                v
+                     Application Load Balancer
+                                |
+                                v
+                      Target Group (HTTP :5000)
+                                |
+                                v
+                    Auto Scaling Group (2 x EC2)
+                      Flask / Python application
+                                |
+                                v
+                    Amazon RDS for MySQL
+                       Private subnets
 
-The deployment flow is:
+        VPC: 10.20.0.0/16
+        Public subnets:  10.20.1.0/24, 10.20.4.0/24
+        Private subnets: 10.20.2.0/24, 10.20.3.0/24
 
-```text
-1. Make a change to the project
-          |
-          v
-2. Push the change to GitHub
-          |
-          v
-3. GitHub triggers Terraform Cloud
-          |
-          v
-4. Terraform Cloud creates a plan
-          |
-          v
-5. Terraform Cloud applies the infrastructure
-          |
-          v
-6. AWS infrastructure is updated
-```
+        Terraform configuration -> HCP Terraform -> AWS
+        GitHub main branch ----------------^
 
-Auto Apply is currently disabled so that infrastructure changes can be reviewed before they are applied.
+The diagram describes the architecture that was deployed during the
+capstone. The AWS resources have since been destroyed, so this is not a
+diagram of currently running resources.
 
-## EC2 Application Setup
+AWS services and tools
 
-The EC2 instance uses Terraform `user_data` to automatically configure the application when the instance starts.
+Amazon VPC: Network boundary and subnets.
 
-The startup process:
+Internet Gateway and route table: Internet routing for public
+subnets.
 
-```text
-EC2 starts
-   |
-   v
-Install Python and pip
-   |
-   v
-Create application directory
-   |
-   v
-Copy app.py to EC2
-   |
-   v
-Create Python virtual environment
-   |
-   v
-Install Flask
-   |
-   v
-Create systemd service
-   |
-   v
-Start Expense Tracker
-```
+Amazon EC2: Compute capacity for the Flask application.
 
-This means the application does not need to be manually installed after a new EC2 instance is created.
+Auto Scaling Group: Maintains the configured EC2 fleet.
 
-## Application
+Application Load Balancer (ALB): Routes HTTP requests to healthy
+application targets.
 
-The application is built with:
+Amazon RDS for MySQL: Managed relational database in private
+subnets.
 
-* Python
-* Flask
-* SQLite
-* HTML
+Amazon VPC security groups: Restrict access between the ALB,
+application instances, and database.
 
-The current application runs on port `5000`.
+Terraform: Defines and manages the infrastructure as code.
 
-## Project Structure
+HCP Terraform: Remote Terraform runs and state management.
 
-```text
-expense-tracker-capstone/
-│
-├── app.py
-├── main.tf
-├── outputs.tf
-├── .gitignore
-└── .terraform.lock.hcl
-```
+GitHub: Version control and source repository.
 
-### `app.py`
+Python / Flask / PyMySQL: Application framework and MySQL
+connectivity.
 
-Contains the Flask Expense Tracker application.
+Repository contents
 
-### `main.tf`
+The repository contains the Flask application and Terraform
+configuration files used for the capstone. The exact filenames may vary
+with the current repository version. Common Terraform files include:
 
-Contains the Terraform configuration for the AWS infrastructure.
+main.tf --- AWS resource definitions.
 
-### `outputs.tf`
+variables.tf --- configurable values, including sensitive database
+settings.
 
-Displays useful Terraform outputs such as:
+outputs.tf --- useful outputs such as the ALB URL and RDS
+endpoint.
 
-* VPC ID
-* Subnet ID
-* EC2 Instance ID
-* Public IP address
+versions.tf or provider configuration --- Terraform and AWS
+provider requirements.
 
-### `.gitignore`
+app.py --- Flask application code.
 
-Prevents files such as Terraform state files, the SQLite database, and Python cache files from being uploaded to GitHub.
+Deployment workflow
 
-## Current Level
+Make a change in the repository and push it to the main branch.
 
-The project has now reached Level 2.
+HCP Terraform detects the change and queues a run.
 
-The application runs on Amazon EC2 and uses Amazon RDS MySQL as the database.
+Review the Terraform plan carefully.
 
-The current architecture is:
+Approve the run to apply the changes (automatic apply was disabled
+for this workspace).
 
-Internet
-↓
-Public Subnet
-↓
-EC2
-↓
-Private Subnets
-↓
-RDS MySQL
+After a successful apply, review the outputs and test the
+application URL.
 
-The focus of Level 2 is on understanding:
+Important: Do not run Terraform locally against a stale local state
+file. Use the configured HCP Terraform workspace for runs, and confirm
+the correct workspace and AWS account before applying or destroying
+resources.
 
-* Terraform
-* AWS VPC
-* Public and private subnets
-* Internet Gateway
-* Route Tables
-* Security Groups
-* EC2
-* Amazon RDS MySQL
-* Database connectivity
-* Infrastructure as Code
-* GitHub
-* Terraform Cloud
-* Automated application setup
+Configuration and secrets
 
-The Terraform infrastructure is stored in GitHub and connected to Terraform Cloud. Changes pushed to the main branch automatically trigger a Terraform plan.
+Store the database password as a sensitive variable in HCP
+Terraform.
 
-## Future Improvements
+Do not commit real passwords, access keys, tokens, .tfstate files,
+or private .tfvars files.
 
-The project can be extended as I learn more AWS services.
+Keep sensitive local configuration excluded using .gitignore.
 
-### Level 3
+Never put credentials in screenshots or documentation.
 
-Possible future improvements include:
+Testing performed
 
-* Application Load Balancer
-* Auto Scaling Group
-* Multiple EC2 instances
-* RDS MySQL database
-* Improved high availability
-* More scalable architecture
+The deployed application was tested for the main expense-management
+actions:
 
-## Learning Goals
+Adding an expense.
 
-This project is designed to demonstrate practical knowledge of:
+Editing an expense.
 
-* AWS infrastructure
-* Terraform
-* Infrastructure as Code
-* GitHub version control
-* Terraform Cloud
-* EC2 deployment
-* Amazon RDS
-* Basic cloud networking
-* Public and private subnets
-* Security Groups
-* Database connectivity
-* Application deployment
-* AWS architecture
+Deleting an expense.
 
-## Author
+Viewing entries and the calculated total.
 
-Surbhi Suman
+The AWS deployment completed successfully, and the application was
+accessible through the ALB at the time of testing. The infrastructure
+was later destroyed as a cost-control measure.
 
-AWS / Terraform Learning Project
+Cost and cleanup
+
+AWS resources can incur charges while they exist, even when the
+application is not actively used. For this capstone, the Terraform
+destroy run completed with 0 added, 0 changed, and 19 destroyed. The
+EC2 instances, RDS database, and load balancer were subsequently
+confirmed absent from the AWS Console.
+
+To recreate the infrastructure, review the code and variables first,
+then run a plan and apply from the intended HCP Terraform workspace.
+This will create billable resources again. Destroy resources when
+finished, and check AWS Billing because charges can be delayed.
+
+The default VPC in the account is separate from the capstone VPC and was
+left untouched.
+
+Lessons learned
+
+How to define AWS infrastructure using Terraform.
+
+How to use HCP Terraform for remote state and runs.
+
+How to connect a GitHub repository to an HCP Terraform workspace.
+
+How to deploy a Flask application with EC2, an ALB, an Auto Scaling
+Group, and RDS.
+
+How security groups control traffic between application tiers.
+
+Why it is important to review AWS costs and clean up resources after
+testing.
+
+Further documentation
+
+See PROJECT_DOCUMENTATION.md for a fuller
+project summary, architecture, deployment workflow, testing, and cleanup
+notes.
+
+Disclaimer
+
+This is an educational capstone project. It is not intended to be a
+production-ready financial application. Before production use,
+additional work would be needed for authentication, authorisation,
+HTTPS, robust secrets management, backups, monitoring, and application
+hardening.
