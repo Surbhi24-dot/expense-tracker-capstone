@@ -176,3 +176,85 @@ production-ready financial application. Before production use,
 additional work would be needed for authentication, authorisation,
 HTTPS, robust secrets management, backups, monitoring, and application
 hardening.
+
+---
+
+## 📸 Project Screenshots
+
+The following screenshots document the AWS infrastructure, Terraform deployment, and monitoring components of this project.
+
+### 1. VPC and Networking
+
+#### VPC Configuration
+
+![VPC Configuration](screenshots/VPC.png)
+
+#### VPC Resource Map
+
+![VPC Resource Map](screenshots/VPC_resource_map.png)
+
+### 2. EC2 Instances
+
+#### EC2 Instance Console
+
+![EC2 Instance Console](screenshots/Console_instance.png)
+
+#### Instance Details
+
+![Instance Details](screenshots/instance_detail.png)
+
+![Additional Instance Details](screenshots/instance_detail2.png)
+
+### 3. Application Load Balancer
+
+#### Load Balancer Configuration
+
+![Application Load Balancer](screenshots/console_ALB.png)
+
+#### Load Balancer Resource Map
+
+![ALB Resource Map](screenshots/ALB_resource%20map.png)
+
+#### Target Group
+
+![Target Group](screenshots/target_grp.png)
+
+### 4. Auto Scaling
+
+#### Auto Scaling Group
+
+![Auto Scaling Group](screenshots/AutoScaling_grp.png)
+
+#### Load Balancer and Auto Scaling Configuration
+
+![ALB and Auto Scaling](screenshots/add%20alb%20%26%20autoscaling.png)
+
+### 5. Amazon RDS
+
+#### RDS Console
+
+![Amazon RDS](screenshots/console_RDS.png)
+
+### 6. Monitoring
+
+#### CloudWatch Monitoring
+
+![CloudWatch Monitoring](screenshots/cloud_watch_monitoring.png)
+
+### 7. Project Architecture
+
+#### Level 1 Architecture
+
+![Level 1 Architecture](screenshots/Level%201.png)
+
+#### Level 2 Architecture
+
+![Level 2 Architecture](screenshots/Level%202.png)
+
+#### Level 3 Architecture
+
+![Level 3 Architecture](screenshots/Level3.png)
+
+#### Level 3 Architecture Diagram
+
+![Detailed Level 3 Architecture](screenshots/architecture%20diag%20level3.png)
